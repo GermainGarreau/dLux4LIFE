@@ -204,7 +204,7 @@ class AbstractRefractiveOptic(dl.BaseLayer):
     material: dlMaterials.Material
 
     @abstractmethod
-    def apply(self, wavefront: dl.Wavefront) -> dl.Wavefront:
+    def __call__(self, wavefront: dl.Wavefront) -> dl.Wavefront:
         pass
 
 
@@ -213,7 +213,7 @@ class ParametricRefractiveOptic(AbstractRefractiveOptic):
     def generate_thickness(self) -> np.ndarray:
         pass
 
-    def apply(self, wavefront: dl.Wavefront) -> dl.Wavefront:
+    def __call__(self, wavefront: dl.Wavefront) -> dl.Wavefront:
         thickness = self.generate_thickness()
         n = self.material.n(wavefront.wavelength)
         opd = thickness_to_opd(thickness, n)
@@ -267,7 +267,7 @@ class ParametricReflectiveOptic(dl.BaseLayer):
     def generate_opd(self) -> np.ndarray:
         pass
 
-    def apply(self, wavefront: dl.Wavefront) -> dl.Wavefront:
+    def __call__(self, wavefront: dl.Wavefront) -> dl.Wavefront:
         opd = self.generate_opd()
         return wavefront.add_opd(opd)
 
@@ -339,7 +339,7 @@ class PIAAset(dl.optical_layers.OpticalLayer):
         self.distance = distance
         self.is_inverse = is_inverse
 
-    def apply(self, wavefront: dl.Wavefront) -> dl.Wavefront:
+    def __call__(self, wavefront: dl.Wavefront) -> dl.Wavefront:
         """
         Propagates the input wavefront through the PIAA lens pair using
         the `plane_to_plane` function defined above.
@@ -368,18 +368,18 @@ class PIAAset(dl.optical_layers.OpticalLayer):
             # Propagate between lenses (inverse direction)
             wavefront = plane_to_plane(wavefront, self.distance, pad=2)
             # First lens (inverse order)
-            wavefront = self.piaa_optic_2.apply(wavefront)
+            wavefront = self.piaa_optic_2.__call__(wavefront)
             # Final propagation back
             wavefront = plane_to_plane(wavefront, -self.distance, pad=2)
             # Second lens (inverse order)
-            wavefront = self.piaa_optic_1.apply(wavefront)
+            wavefront = self.piaa_optic_1.__call__(wavefront)
         else:
             # First lens
-            wavefront = self.piaa_optic_1.apply(wavefront)
+            wavefront = self.piaa_optic_1.__call__(wavefront)
             # Propagate between lenses
             wavefront = plane_to_plane(wavefront, self.distance, pad=2)
             # Second lens
-            wavefront = self.piaa_optic_2.apply(wavefront)
+            wavefront = self.piaa_optic_2.__call__(wavefront)
             # Final propagation out
             wavefront = plane_to_plane(wavefront, -self.distance, pad=2)
 
@@ -392,7 +392,7 @@ class Magnifier(dl.BaseLayer):
     def __init__(self, magnification: float):
         self.magnification = magnification
 
-    def apply(self, wavefront: dl.Wavefront) -> dl.Wavefront:
+    def __call__(self, wavefront: dl.Wavefront) -> dl.Wavefront:
         new_diameter = wavefront.diameter * self.magnification
         return wavefront.set(
             ["diameter", "pixel_scale"],
